@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>114SAD 臺灣動漫媒體評論系統</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         body { background-color: #f8f9fa; }
@@ -25,8 +25,8 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item"><a class="nav-link active" href="#" onclick="switchPage('home')">前台首頁</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#" onclick="switchPage('admin')">管理者後台</a></li>
+                    <li class="nav-item"><a class="nav-link active" id="nav-home" href="#" onclick="switchPage('home')">前台首頁</a></li>
+                    <li class="nav-item"><a class="nav-link" id="nav-admin" href="#" onclick="switchPage('admin')">管理者後台</a></li>
                 </ul>
                 <span class="navbar-text text-white-50" id="user-display">
                     <i class="fa-solid fa-circle-user me-1"></i> 尚未登入
@@ -151,39 +151,35 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // 後台 API 的基礎網址
         const API_BASE = 'http://localhost:3000/api';
-        
-        // 預設為空，等待使用者在彈出視窗輸入註冊
         let CURRENT_USER = null;
         let loginModal;
 
-        // 網頁載入完成後，自動執行初始化
         document.addEventListener('DOMContentLoaded', () => {
-            // 實例化註冊彈出視窗
+            // 正確初始化彈出視窗
             loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
             
-            // 如果沒登入，強制跳出註冊/登入視窗
             if (!CURRENT_USER) {
                 loginModal.show();
             }
             loadCommentsFromServer();
         });
 
-        // 切換前台首頁與管理者後台頁面
         function switchPage(pageId) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
             document.getElementById('hero').style.display = (pageId === 'home') ? 'block' : 'none';
             
-            // 切換時均向伺服器重新抓取最新數據，確保同步
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            if(pageId === 'home') document.getElementById('nav-home').classList.add('active');
+            if(pageId === 'admin') document.getElementById('nav-admin').classList.add('active');
+
             loadCommentsFromServer();
         }
 
-        // 點擊作品字樣，進入評論詳細頁面
         function viewComic(title, contentId) {
             document.getElementById('detail-title').innerText = title;
             document.getElementById('detail-title').setAttribute('data-content-id', contentId);
@@ -191,9 +187,6 @@
             switchPage('comic-detail');
         }
 
-        // ==========================================
-        //  註冊登入：驗證 gm2 並寫入使用者資料庫 (C in CRUD)
-        // ==========================================
         function handleRegisterAndLogin() {
             const studentId = document.getElementById('reg-student-id').value.trim();
             const name = document.getElementById('reg-name').value.trim();
@@ -203,12 +196,10 @@
                 return alert('所有欄位皆為必填！');
             }
 
-            // 後端驗證前哨站：嚴格檢查 gm2 格式
             if (!email.endsWith('@gm2.edu.tw')) {
                 return alert('註冊失敗：必須使用 @gm2.edu.tw 結尾的學校信箱！');
             }
 
-            // 將新使用者資料打包送往後台寫入資料表
             fetch(`${API_BASE}/users`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -230,7 +221,6 @@
                 }
             })
             .catch(err => {
-                // 如果後台回報錯誤，通常代表學號在 system_users 表中已存在，系統貼心改為直接登入
                 alert('【系統通知】偵測到此學號已註冊過，系統自動為您登入！');
                 CURRENT_USER = { student_id: studentId, gm2_email: email, member_name: name };
                 document.getElementById('user-display').innerHTML = `<i class="fa-solid fa-circle-user text-success me-1"></i> ${name} (${studentId}) 已連線`;
@@ -238,9 +228,6 @@
             });
         }
 
-        // ==========================================
-        //  功能一：向後台撈取所有 3NF 關聯留言 (R in CRUD)
-        // ==========================================
         function loadCommentsFromServer() {
             fetch(`${API_BASE}/comments`)
                 .then(res => res.json())
@@ -248,7 +235,6 @@
                     const commentBox = document.getElementById('comment-box');
                     const adminTable = document.getElementById('admin-comment-table');
                     
-                    // 清空前、後台的舊網頁結構
                     commentBox.innerHTML = '';
                     if (adminTable) adminTable.innerHTML = '';
 
@@ -258,9 +244,7 @@
                         return;
                     }
 
-                    // 透過迴圈將真實資料流撈出渲染
                     data.forEach(item => {
-                        // 1. 渲染前台詳細頁面的讀者評論
                         commentBox.innerHTML += `
                             <div class="p-3 bg-light rounded mb-2 border-start border-primary border-3">
                                 <div class="d-flex justify-content-between">
@@ -270,7 +254,6 @@
                                 <p class="mb-0 mt-2"><strong>[${item.title}]</strong> ${item.comment_text}</p>
                             </div>`;
 
-                        // 2. 渲染管理者管理後台之資料審查表格
                         if (adminTable) {
                             adminTable.innerHTML += `
                                 <tr>
@@ -290,9 +273,6 @@
                 .catch(err => console.error("無法從後台撈取留言數據流:", err));
         }
 
-        // ==========================================
-        //  功能二：發送新留言評論至後台資料庫 (C in CRUD)
-        // ==========================================
         function submitComment() {
             const content = document.getElementById('input-comment').value.trim();
             if (!content) return alert('請輸入評論內容！');
@@ -303,7 +283,6 @@
                 return alert('請先完成註冊登入！');
             }
 
-            // 真正向後端發送 POST 請求寫入 user_comments 資料表
             fetch(`${API_BASE}/comments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -317,14 +296,11 @@
             .then(data => {
                 alert('【前台通知】' + data.message);
                 document.getElementById('input-comment').value = '';
-                switchPage('home'); // 發表成功後引導返回首頁
+                switchPage('home');
             })
             .catch(err => alert('資料流傳輸失敗，請確認本地 node server.js 是否正常開啟。'));
         }
 
-        // ==========================================
-        //  功能三：從後台刪除違規留言 (D in CRUD)
-        // ==========================================
         function deleteCommentFromServer(commentId) {
             if (!confirm('確認要對 SQLite 資料庫執行實體抹除動作（D in CRUD）嗎？')) return;
 
@@ -334,7 +310,7 @@
             .then(res => res.json())
             .then(data => {
                 alert('【後台審查機制】' + data.message);
-                loadCommentsFromServer(); // 重新向伺服器更新最新表格狀態
+                loadCommentsFromServer();
             })
             .catch(err => console.error("刪除失敗:", err));
         }
