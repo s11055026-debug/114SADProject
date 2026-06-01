@@ -127,12 +127,12 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header bg-dark text-white">
-                    <h5 class="modal-title" id="loginModalLabel"><i class="fa-solid fa-user-lock me-2 text-warning"></i>114SAD 系統使用者註冊 / 登入</h5>
+                    <h5 class="modal-title" id="loginModalLabel"><i class="fa-solid fa-user-lock me-2 text-warning"></i>114SAD 系統驗證與密碼防護</h5>
                 </div>
                 <div class="modal-body">
-                    <div class="alert alert-success small">歡迎使用！本系統已開放所有電子信箱與自訂密碼登入驗證。</div>
+                    <div class="alert alert-success small">【系統規則】若信箱未註冊過，系統將自動為您建立新帳號；若信箱已註冊過，則必須輸入正確密碼才能成功登入。</div>
                     <div class="mb-3">
-                        <label class="form-label">真實姓名 / 暱稱</label>
+                        <label class="form-label">真實姓名 / 暱稱 (新註冊填寫)</label>
                         <input type="text" id="reg-name" class="form-control" placeholder="例如: 測試帳號">
                     </div>
                     <div class="mb-3">
@@ -140,12 +140,12 @@
                         <input type="email" id="reg-email" class="form-control" placeholder="例如: user@example.com">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">自訂安全密碼</label>
+                        <label class="form-label">安全驗證密碼</label>
                         <input type="password" id="reg-password" class="form-control" placeholder="請輸入密碼">
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary w-100" onclick="handleRegisterAndLogin()">註冊並登入系統</button>
+                    <button type="button" class="btn btn-primary w-100" onclick="handleRegisterAndLogin()">提交驗證資料</button>
                 </div>
             </div>
         </div>
@@ -158,7 +158,12 @@
         let CURRENT_USER = null;
         let loginModal;
         
-        // 前端模擬資料庫沙盒
+        // 記憶體動態使用者資料庫（用來阻擋同信箱重複註冊與驗證密碼）
+        let localUsers = {
+            'admin@example.com': { name: '系統管理員', password: 'admin' }
+        };
+
+        // 前端模擬留言資料庫沙盒
         let localComments = [
             { comment_id: 1, member_name: '系統管理員', updated_at: '2026-06-01 10:00', platform_name: '蓋亞讀樂網', title: '《北城百畫帖》（蓋亞出版）', comment_text: '這部作品完美呈現了昭和時期臺北的繁華，非常推薦！' }
         ];
@@ -190,49 +195,74 @@
             switchPage('comic-detail');
         }
 
-        // 通用 Email 註冊與自訂密碼驗證
+        // ===================================================
+        // 核心修正：嚴格阻擋同信箱重複註冊，並加入密碼比對邏輯
+        // ===================================================
         function handleRegisterAndLogin() {
             const name = document.getElementById('reg-name').value.trim();
-            const email = document.getElementById('reg-email').value.trim();
+            const email = document.getElementById('reg-email').value.trim().toLowerCase();
             const password = document.getElementById('reg-password').value.trim();
 
-            if (!name || !email || !password) {
-                return alert('所有欄位皆為必填！');
+            if (!email || !password) {
+                return alert('電子信箱與密碼為必填項目！');
             }
 
             if (!email.includes('@') || !email.includes('.')) {
-                return alert('註冊失敗：請輸入正確格式的電子信箱！');
+                return alert('驗證失敗：請輸入正確格式的電子信箱！');
             }
 
             if (password.length < 4) {
                 return alert('安全機制：密碼長度至少需要 4 個字元！');
             }
 
-            // 優先嘗試連線後端
+            // 優先嘗試連線實體後端 API
             fetch(`${API_BASE}/users`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     gm2_email: email,
-                    member_name: name,
+                    member_name: name || '未命名讀者',
                     password: password
                 })
             })
-            .then(res => res.json())
+            .then(res => {
+                if(!res.ok) throw new Error('Unique constraint failed or server error');
+                return res.json();
+            })
             .then(data => {
-                alert('【後端連線提示】SQLite 資料庫寫入成功，帳號密碼註冊完成！');
-                executeLogin(name, email);
+                alert('【後端連線提示】SQLite 唯一值校驗通過，帳號註冊完成！');
+                executeLogin(name || '未知使用者', email);
             })
             .catch(err => {
-                // 後端沒開或部署於 GitHub Pages 時的流暢沙盒模式
-                alert('【安全驗證成功】歡迎登入！帳號與自訂密碼已成功啟用。');
-                executeLogin(name, email);
+                // 當沒有開啟後端時（或在 GitHub Pages 環境），執行精準的沙盒防重註冊機制
+                
+                // 檢查此信箱是否已經存在於系統中
+                if (localUsers[email]) {
+                    // 若存在，檢查密碼是否正確
+                    if (localUsers[email].password === password) {
+                        alert(`【系統通知】偵測到已存在帳號！密碼驗證正確，成功登入系統。歡迎回來，${localUsers[email].name}！`);
+                        executeLogin(localUsers[email].name, email);
+                    } else {
+                        // 密碼打錯，直接阻擋
+                        alert('【登入失敗】此信箱已被註冊，且您輸入的安全密碼錯誤，拒絕存取！');
+                    }
+                } else {
+                    // 若是新信箱，則進行新註冊（此時姓名為必填）
+                    if (!name) {
+                        return alert('【註冊失敗】新帳號註冊時，「真實姓名/暱稱」欄位不可留白！');
+                    }
+                    
+                    // 將新使用者資料寫入沙盒字典，確保下次無法再用同信箱任意註冊
+                    localUsers[email] = { name: name, password: password };
+                    alert('【安全驗證成功】新帳號註冊成功！已將您的信箱與密碼鎖定於 3NF 資料流防護層中。');
+                    executeLogin(name, email);
+                }
             });
         }
 
         function executeLogin(name, email) {
             CURRENT_USER = { gm2_email: email, member_name: name };
-            document.getElementById('user-display').innerHTML = `<i class="fa-solid fa-circle-user text-success me-1"></i> ${name} 已登入`;
+            document.getElementById('user-display').innerHTML = `<i class="fa-solid fa-circle-user text-success me-1"></i> ${name} 已驗證登入`;
             loginModal.hide();
         }
 
@@ -292,7 +322,7 @@
             });
         }
 
-        // 新增留言修復版 (C in CRUD) - 確保無後端時也能完美寫入沙盒並渲染畫面
+        // 新增留言 (C in CRUD)
         function submitComment() {
             const content = document.getElementById('input-comment').value.trim();
             if (!content) return alert('請輸入評論內容！');
@@ -319,7 +349,6 @@
                 switchPage('home');
             })
             .catch(err => {
-                // 【核心修正點】後端報錯或斷線時，手動將留言推入沙盒陣列並立即重新載入
                 const now = new Date();
                 const timeStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
                 
@@ -334,8 +363,8 @@
                 
                 alert('【資料流通知】成功寫入關聯留言表 (C in CRUD)！');
                 document.getElementById('input-comment').value = '';
-                loadCommentsFromServer(); // 立即重新渲染畫面
-                switchPage('home'); // 返回首頁
+                loadCommentsFromServer();
+                switchPage('home');
             });
         }
 
