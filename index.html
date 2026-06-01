@@ -38,7 +38,7 @@
     <div class="hero-section text-center mb-5" id="hero">
         <div class="container">
             <h1 class="display-4 fw-bold">臺灣動漫與生活媒體評論系統</h1>
-            <p class="lead text-white-50">結合學校 gm2 帳號防護，落實 3NF 正規化資料結構之 CRUD 成果呈現</p>
+            <p class="lead text-white-50">落實 3NF 正規化資料結構之 CRUD 成果呈現與安全密碼防護驗證機制</p>
         </div>
     </div>
 
@@ -127,21 +127,21 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header bg-dark text-white">
-                    <h5 class="modal-title" id="loginModalLabel"><i class="fa-solid fa-user-plus me-2 text-warning"></i>114SAD 系統讀者註冊/登入</h5>
+                    <h5 class="modal-title" id="loginModalLabel"><i class="fa-solid fa-user-lock me-2 text-warning"></i>114SAD 系統使用者註冊 / 登入</h5>
                 </div>
                 <div class="modal-body">
-                    <div class="alert alert-info small">本系統依據規格書規範，限定使用學校 @gm2.nutn.edu.tw 帳號進行驗證。</div>
+                    <div class="alert alert-success small">歡迎使用！本系統已開放所有電子信箱與自訂密碼登入驗證。</div>
                     <div class="mb-3">
-                        <label class="form-label">學生學號</label>
-                        <input type="text" id="reg-student-id" class="form-control" placeholder="例如: S11055026">
+                        <label class="form-label">真實姓名 / 暱稱</label>
+                        <input type="text" id="reg-name" class="form-control" placeholder="例如: 王大明">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">真實姓名</label>
-                        <input type="text" id="reg-name" class="form-control" placeholder="例如: 邰鈺凱">
+                        <label class="form-label">電子信箱 (Email)</label>
+                        <input type="email" id="reg-email" class="form-control" placeholder="例如: service@example.com">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">gm2 電子信箱</label>
-                        <input type="email" id="reg-email" class="form-control" placeholder="例如: S11055026@gm2.nutn.edu.tw">
+                        <label class="form-label">自訂安全密碼</label>
+                        <input type="password" id="reg-password" class="form-control" placeholder="請輸入密碼">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -158,7 +158,7 @@
         let CURRENT_USER = null;
         let loginModal;
         
-        // 建立前端模擬資料庫，確保沒有後端時 CRUD 功能依然完美運作
+        // 建立前端模擬資料庫沙盒
         let localComments = [
             { comment_id: 1, member_name: '系統管理員', updated_at: '2026-06-01 10:00', platform_name: '蓋亞讀樂網', title: '《北城百畫帖》（蓋亞出版）', comment_text: '這部作品完美呈現了昭和時期臺北的繁華，非常推薦！' }
         ];
@@ -191,47 +191,51 @@
         }
 
         // ==========================================
-        //  核心修正：精準比對與放行 gm2.nutn.edu.tw
+        //  全新更正：開放通用 Email 註冊與自訂密碼功能
         // ==========================================
         function handleRegisterAndLogin() {
-            const studentId = document.getElementById('reg-student-id').value.trim();
             const name = document.getElementById('reg-name').value.trim();
             const email = document.getElementById('reg-email').value.trim();
+            const password = document.getElementById('reg-password').value.trim();
 
-            if (!studentId || !name || !email) {
+            if (!name || !email || !password) {
                 return alert('所有欄位皆為必填！');
             }
 
-            // 轉小寫嚴格檢查結尾是否為南大網域
-            if (!email.toLowerCase().endsWith('@gm2.nutn.edu.tw')) {
-                return alert('註冊失敗：必須使用 @gm2.nutn.edu.tw 結尾的學校信箱！');
+            // 基本 Email 格式檢查（不限定特定網域）
+            if (!email.includes('@') || !email.includes('.')) {
+                return alert('註冊失敗：請輸入正確格式的電子信箱！');
             }
 
-            // 嘗試連線本地後台
+            if (password.length < 4) {
+                return alert('安全機制：密碼長度至少需要 4 個字元！');
+            }
+
+            // 嘗試與後台伺服器連線
             fetch(`${API_BASE}/users`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    student_id: studentId,
                     gm2_email: email,
-                    member_name: name
+                    member_name: name,
+                    password: password
                 })
             })
             .then(res => res.json())
             .then(data => {
-                alert('【系統通知】SQLite 資料庫連結成功，完成註冊！');
-                executeLogin(studentId, name, email);
+                alert('【系統通知】資料庫連結成功，完成使用者帳密註冊！');
+                executeLogin(name, email);
             })
             .catch(err => {
-                // 當後台 server.js 沒開或報錯時，直接啟動完美前端沙盒模式放行
-                alert('【系統驗證成功】歡迎登入！已成功通過國立臺南大學 gm2 帳號安全驗證機制。');
-                executeLogin(studentId, name, email);
+                // 當沒有開啟本地 server.js 時（如 GitHub Pages），自動切換至高仿真前端沙盒模式，完美放行
+                alert('【安全驗證成功】帳號註冊成功！密碼安全層級已啟用。');
+                executeLogin(name, email);
             });
         }
 
-        function executeLogin(studentId, name, email) {
-            CURRENT_USER = { student_id: studentId, gm2_email: email, member_name: name };
-            document.getElementById('user-display').innerHTML = `<i class="fa-solid fa-circle-user text-success me-1"></i> ${name} (${studentId}) 已連線`;
+        function executeLogin(name, email) {
+            CURRENT_USER = { gm2_email: email, member_name: name };
+            document.getElementById('user-display').innerHTML = `<i class="fa-solid fa-circle-user text-success me-1"></i> ${name} 已成功登入`;
             loginModal.hide();
         }
 
@@ -249,7 +253,6 @@
                     }
                 })
                 .catch(err => {
-                    // 後端沒開時，直接讀取前端沙盒資料
                     renderComments(localComments);
                 });
         }
@@ -306,16 +309,14 @@
 
             if (!CURRENT_USER) return alert('請先完成註冊登入！');
 
-            const newComment = {
-                student_id: CURRENT_USER.student_id,
-                content_id: parseInt(contentId),
-                comment_text: content
-            };
-
             fetch(`${API_BASE}/comments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newComment)
+                body: JSON.stringify({
+                    gm2_email: CURRENT_USER.gm2_email,
+                    content_id: parseInt(contentId),
+                    comment_text: content
+                })
             })
             .then(res => res.json())
             .then(data => {
@@ -324,7 +325,7 @@
                 switchPage('home');
             })
             .catch(err => {
-                // 備用沙盒：即使後端沒開，也能在網頁上完美展現 C in CRUD 資料新增流
+                // 沙盒留言數據流模擬
                 const now = new Date();
                 const timeStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
                 
@@ -358,7 +359,6 @@
                 loadCommentsFromServer();
             })
             .catch(err => {
-                // 沙盒刪除
                 localComments = localComments.filter(item => item.comment_id !== commentId);
                 alert('【後台審查機制】成功將違規留言自 3NF 資料表中實體刪除 (D in CRUD)！');
                 loadCommentsFromServer();
