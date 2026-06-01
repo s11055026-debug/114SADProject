@@ -130,7 +130,7 @@
                     <h5 class="modal-title" id="loginModalLabel"><i class="fa-solid fa-user-plus me-2 text-warning"></i>114SAD 系統讀者註冊/登入</h5>
                 </div>
                 <div class="modal-body">
-                    <div class="alert alert-info small">本系統依據規格書規範，限定使用學校 @gm2.edu.tw 帳號進行驗證。</div>
+                    <div class="alert alert-info small">本系統依據規格書規範，限定使用學校 @gm2.nutn.edu.tw 帳號進行驗證。</div>
                     <div class="mb-3">
                         <label class="form-label">學生學號</label>
                         <input type="text" id="reg-student-id" class="form-control" placeholder="例如: M11403001">
@@ -141,7 +141,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">gm2 電子信箱</label>
-                        <input type="email" id="reg-email" class="form-control" placeholder="例如: sam24@gm2.edu.tw">
+                        <input type="email" id="reg-email" class="form-control" placeholder="例如: sam24@gm2.nutn.edu.tw">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -159,7 +159,7 @@
         let loginModal;
 
         document.addEventListener('DOMContentLoaded', () => {
-            // 正確初始化彈出視窗
+            // 初始化彈出視窗
             loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
             
             if (!CURRENT_USER) {
@@ -196,8 +196,9 @@
                 return alert('所有欄位皆為必填！');
             }
 
-            if (!email.endsWith('@gm2.edu.tw')) {
-                return alert('註冊失敗：必須使用 @gm2.edu.tw 結尾的學校信箱！');
+            // 更新：嚴格比對 nutn 的專屬 gm2 網域
+            if (!email.endsWith('@gm2.nutn.edu.tw')) {
+                return alert('註冊失敗：必須使用 @gm2.nutn.edu.tw 結尾的學校信箱！');
             }
 
             fetch(`${API_BASE}/users`, {
