@@ -26,7 +26,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link active" id="nav-home" href="#" onclick="switchPage('home')">前台首頁</a></li>
-                    <li class="nav-item"><a class="nav-link" id="nav-admin" href="#" onclick="switchPage('admin')">管理者後台</a></li>
+                    <li class="nav-item"><a class="nav-link" id="nav-admin" href="#" onclick="switchPage('admin')"><i class="fa-solid fa-lock me-1 text-danger" id="admin-lock-icon"></i>管理者後台</a></li>
                 </ul>
                 <span class="navbar-text text-white-50 me-3" id="user-display">
                     <i class="fa-solid fa-circle-user me-1"></i> 尚未登入
@@ -78,8 +78,9 @@
 
         <div id="admin" class="page">
             <h3 class="border-bottom pb-2 mb-4 text-danger"><i class="fa-solid fa-screwdriver-wrench me-2"></i>資訊系統管理後台 (Admin Panel)</h3>
-            <div class="card p-4" style="height: auto;">
-                <h5 class="card-title mb-3">全系統留言與資料流審查機制 (D in CRUD)</h5>
+            
+            <div class="card p-4 mb-5" style="height: auto;">
+                <h5 class="card-title mb-3 text-dark fw-bold"><i class="fa-solid fa-comments-toggle me-2 text-primary"></i>全系統留言審查機制 (D in CRUD)</h5>
                 <div class="table-responsive">
                     <table class="table table-striped table-hover align-middle">
                         <thead class="table-dark">
@@ -96,6 +97,25 @@
                     </table>
                 </div>
             </div>
+
+            <div class="card p-4" style="height: auto;">
+                <h5 class="card-title mb-3 text-dark fw-bold"><i class="fa-solid fa-film me-2 text-success"></i>全系統動漫作品頁面審查機制 (D in CRUD)</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle">
+                        <thead class="table-success">
+                            <tr>
+                                <th>作品識別碼 (PK)</th>
+                                <th>作品名稱 / 標題</th>
+                                <th>合作媒體 / 創作者</th>
+                                <th>建立者信箱</th>
+                                <th>管理操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-comic-table">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
     </div>
@@ -107,14 +127,14 @@
                     <h5 class="modal-title" id="loginModalLabel"><i class="fa-solid fa-user-lock me-2 text-warning"></i>114SAD 系統驗證與密碼防護</h5>
                 </div>
                 <div class="modal-body">
-                    <div class="alert alert-success small">【永續安全機制】若信箱第一次輸入，系統會綁定該密碼註冊；若信箱已存在，則必須輸入正確密碼才能成功登入。</div>
+                    <div class="alert alert-success small">【登入提示】普通用戶第一次輸入將自動綁定新帳號。若要進入後台，請輸入你專屬的管理員帳密。</div>
                     <div class="mb-3">
-                        <label class="form-label">真實姓名 / 暱稱 (新註冊才需填寫)</label>
-                        <input type="text" id="reg-name" class="form-control" placeholder="例如: 測試帳號">
+                        <label class="form-label">真實姓名 / 暱稱</label>
+                        <input type="text" id="reg-name" class="form-control" placeholder="普通用戶填寫，管理員免填">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">電子信箱 (Email)</label>
-                        <input type="email" id="reg-email" class="form-control" placeholder="例如: user@example.com">
+                        <input type="text" id="reg-email" class="form-control" placeholder="例如: user@example.com 或 123">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">安全驗證密碼</label>
@@ -133,16 +153,16 @@
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title" id="addComicModalLabel"><i class="fa-solid fa-square-plus me-2"></i>建立全新動漫媒體評論專頁</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-shadow="none" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">作品名稱 / 生活媒體專欄標題</label>
-                        <input type="text" id="new-comic-title" class="form-control" placeholder="例如: 《咒術迴戰》、動漫特展專題">
+                        <input type="text" id="new-comic-title" class="form-control" placeholder="例如: 《咒術迴戰》">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">合作媒體來源 / 創作者</label>
-                        <input type="text" id="new-comic-source" class="form-control" placeholder="例如: 集英社、悠圖單車媒體、蓋亞文化">
+                        <input type="text" id="new-comic-source" class="form-control" placeholder="例如: 集英社">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">作品簡介與特色概述</label>
@@ -164,20 +184,23 @@
         let loginModal;
         let addComicModalObj;
 
-        // 預設核心 3NF 資料，若硬碟無資料則進行初始化
+        // 預設核心 3NF 資料，標註 creator 為 'system' 代表系統內建防呆作品
         const defaultComics = [
-            { id: 1, title: '《北城百畫帖》', source: '蓋亞讀樂網', desc: '創作者：AKRU。描繪昭和時期臺北榮町珈琲館的奇幻浪漫物語。' },
-            { id: 2, title: '《神之鄉》', source: '臺灣漫畫基地', desc: '創作者：左萱。圍繞大溪關聖帝君繞境活動，刻劃親情與在地信仰的經典作。' },
-            { id: 3, title: 'YOATO 裝備評測專欄', source: '悠圖單車生活媒體', desc: '創作者：悠圖編輯部。提供最專業、即時的單車零組件與戶外裝備實測報告。' }
+            { id: 1, title: '《北城百畫帖》', source: '蓋亞讀樂網', desc: '創作者：AKRU。描繪昭和時期臺北榮町珈琲館的奇幻浪漫物語。', creator: 'system' },
+            { id: 2, title: '《神之鄉》', source: '臺灣漫畫基地', desc: '創作者：左萱。圍繞大溪關聖帝君繞境活動，刻劃親情與在地信仰的經典作。', creator: 'system' },
+            { id: 3, title: 'YOATO 裝備評測專欄', source: '悠圖單車生活媒體', desc: '創作者：悠圖編輯部。提供最專業、即時的單車零組件與戶外裝備實測報告。', creator: 'system' }
         ];
 
-        // 1. 初始化資料庫（永久鎖在瀏覽器內，重整也不會遺失）
+        // 初始化本地永久資料庫
         if (!localStorage.getItem('users')) {
-            localStorage.setItem('users', JSON.stringify({ 'admin@example.com': { name: '系統管理員', password: 'admin' } }));
+            // 寫入普通初始用戶，同時你指定的管理員帳密直接存入字典中
+            localStorage.setItem('users', JSON.stringify({ 
+                '123': { name: 'admin000', password: '123', role: 'admin' }
+            }));
         }
         if (!localStorage.getItem('comments')) {
             localStorage.setItem('comments', JSON.stringify([
-                { comment_id: 1, member_name: '系統管理員', updated_at: '2026-06-01 10:00', platform_name: '蓋亞讀樂網', title: '《北城百畫帖》', comment_text: '這部作品完美呈現了昭和時期臺北的繁華，非常推薦！' }
+                { comment_id: 1, content_id: 1, member_name: '系統管理員', updated_at: '2026-06-01 10:00', platform_name: '蓋亞讀樂網', title: '《北城百畫帖》', comment_text: '這部作品完美呈現了昭和時期臺北的繁華，非常推薦！' }
             ]));
         }
         if (!localStorage.getItem('comics')) {
@@ -188,11 +211,10 @@
             loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
             addComicModalObj = new bootstrap.Modal(document.getElementById('addComicModal'));
             
-            // 檢查是否維持登入狀態
             const sessionUser = sessionStorage.getItem('current_user');
             if (sessionUser) {
                 CURRENT_USER = JSON.parse(sessionUser);
-                document.getElementById('user-display').innerHTML = `<i class="fa-solid fa-circle-user text-success me-1"></i> ${CURRENT_USER.member_name} 已驗證`;
+                applyUserRoleUI();
             } else {
                 loginModal.show();
             }
@@ -201,7 +223,27 @@
             loadCommentsFromServer();
         });
 
+        // ==========================================
+        //  權限核心：控制使用者是否能看到與進入後台
+        // ==========================================
+        function applyUserRoleUI() {
+            const isStr = CURRENT_USER.role === 'admin' ? '★超級管理員★' : '普通讀者';
+            document.getElementById('user-display').innerHTML = `<i class="fa-solid fa-circle-user text-success me-1"></i> ${CURRENT_USER.member_name} (${isStr})`;
+            
+            if (CURRENT_USER.role === 'admin') {
+                document.getElementById('admin-lock-icon').className = "fa-solid fa-unlock me-1 text-success";
+            } else {
+                document.getElementById('admin-lock-icon').className = "fa-solid fa-lock me-1 text-danger";
+            }
+        }
+
         function switchPage(pageId) {
+            // 阻擋非管理員進入後台
+            if (pageId === 'admin' && (!CURRENT_USER || CURRENT_USER.role !== 'admin')) {
+                alert('【拒絕存取】存取權限不足！管理者後台目前鎖定中，僅開放給專屬管理員(admin000)進入。');
+                return;
+            }
+
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
             document.getElementById('hero').style.display = (pageId === 'home') ? 'block' : 'none';
@@ -213,17 +255,21 @@
             loadCommentsFromServer();
         }
 
-        // ==========================================
-        //  功能一：動態載入與渲染作品評論頁卡片 (R in CRUD)
-        // ==========================================
+        // 渲染首頁卡片（前台刪除機制）
         function loadComicsToUI() {
             const container = document.getElementById('comic-cards-container');
-            const comics = JSON.parse(localStorage.getItem('comics'));
+            const comics = JSON.parse(localStorage.getItem('comics')) || [];
             container.innerHTML = '';
 
             comics.forEach(item => {
+                // 判斷當前登入者是不是這個作品的貼文作者，或者當前登入者是不是超級管理員
+                const canDelete = CURRENT_USER && (CURRENT_USER.gm2_email === item.creator || CURRENT_USER.role === 'admin');
+                // 系統預設卡片不提供前台隨意刪除
+                const deleteBtnHtml = (canDelete && item.creator !== 'system') ? 
+                    `<button class="btn btn-outline-danger btn-sm flex-grow-1 ms-2" onclick="deleteComicFromFront(${item.id})"><i class="fa-solid fa-trash-can me-1"></i>刪除作品</button>` : '';
+
                 container.innerHTML += `
-                    <div class="col-md-4">
+                    <div class="col-md-4" id="comic-card-${item.id}">
                         <div class="card">
                             <div class="card-body d-flex flex-column justify-content-between">
                                 <div>
@@ -231,16 +277,40 @@
                                     <h5 class="card-title fw-bold">${item.title}</h5>
                                     <p class="card-text text-muted small">${item.desc}</p>
                                 </div>
-                                <button class="btn btn-outline-primary btn-sm w-100 mt-3" onclick="viewComic('${item.title}', ${item.id}, '${item.source}')">查看與發表評論</button>
+                                <div class="d-flex justify-content-between mt-3">
+                                    <button class="btn btn-outline-primary btn-sm flex-grow-1" onclick="viewComic('${item.title}', ${item.id}, '${item.source}')">查看與發表評論</button>
+                                    ${deleteBtnHtml}
+                                </div>
                             </div>
                         </div>
                     </div>`;
             });
+
+            // 同步刷新管理員後台的作品表格
+            renderAdminComicTable();
         }
 
         // ==========================================
-        //  功能二：自由新增想評論的動漫作品專頁 (C in CRUD)
+        //  前台作者刪除功能 (D in CRUD)
         // ==========================================
+        function deleteComicFromFront(comicId) {
+            if (!confirm('您是此作品的建立者，確認要在前台將其下架移除嗎？')) return;
+
+            let comics = JSON.parse(localStorage.getItem('comics')) || [];
+            comics = comics.filter(c => c.id !== comicId);
+            localStorage.setItem('comics', JSON.stringify(comics));
+
+            // 同步把跟這部動漫相關的所有留言也連帶刪除（維持 3NF 的資料一致性，避免孤兒資料）
+            let comments = JSON.parse(localStorage.getItem('comments')) || [];
+            comments = comments.filter(c => c.content_id !== comicId);
+            localStorage.setItem('comments', JSON.stringify(comments));
+
+            alert('【前台通知】作品已成功由作者權限實體刪除！');
+            loadComicsToUI();
+            loadCommentsFromServer();
+        }
+
+        // 新增想評論的動漫作品專頁 (C in CRUD)
         function submitNewComicPage() {
             const title = document.getElementById('new-comic-title').value.trim();
             const source = document.getElementById('new-comic-source').value.trim();
@@ -250,22 +320,22 @@
                 return alert('建立失敗：所有動漫專頁欄位皆不可留白！');
             }
 
-            const comics = JSON.parse(localStorage.getItem('comics'));
+            const comics = JSON.parse(localStorage.getItem('comics')) || [];
             const newId = comics.length > 0 ? comics[comics.length - 1].id + 1 : 1;
 
-            const newPage = { id: newId, title: title, source: source, desc: desc };
+            // 註冊當前創建者的 Email 信箱作為創作者辨識
+            const newPage = { id: newId, title: title, source: source, desc: desc, creator: CURRENT_USER.gm2_email };
             comics.push(newPage);
             localStorage.setItem('comics', JSON.stringify(comics));
 
-            alert(`【系統資料流成功】已為《${title}》在資料表中建立獨立的主鍵(PK)關聯評論頁！`);
+            alert(`【系統資料流成功】已建立關聯評論頁！您可以開始在此作品下發表與管理留言。`);
             
-            // 清空輸入框並關閉視窗
             document.getElementById('new-comic-title').value = '';
             document.getElementById('new-comic-source').value = '';
             document.getElementById('new-comic-desc').value = '';
             addComicModalObj.hide();
             
-            loadComicsToUI(); // 立即重新整理首頁卡片
+            loadComicsToUI(); 
         }
 
         function viewComic(title, contentId, source) {
@@ -276,50 +346,54 @@
         }
 
         // ==========================================
-        //  功能三：強制防重複註冊與安全密碼驗證
+        //  強制認證登入（精準攔截 admin000 身分）
         // ==========================================
         function handleRegisterAndLogin() {
             const name = document.getElementById('reg-name').value.trim();
-            const email = document.getElementById('reg-email').value.trim().toLowerCase();
+            const email = document.getElementById('reg-email').value.trim();
             const password = document.getElementById('reg-password').value.trim();
 
             if (!email || !password) {
                 return alert('電子信箱與密碼為必填項目！');
             }
-            if (!email.includes('@') || !email.includes('.')) {
-                return alert('驗證失敗：請輸入正確格式的電子信箱！');
+
+            // 1. 優先判斷管理員帳密比對
+            if (email === '123' && password === '123') {
+                alert('【管理員授權成功】歡迎您，超級管理員 admin000！系統已全面解鎖後台審查面板。');
+                CURRENT_USER = { gm2_email: '123', member_name: 'admin000', role: 'admin' };
+                sessionStorage.setItem('current_user', JSON.stringify(CURRENT_USER));
+                applyUserRoleUI();
+                loginModal.hide();
+                loadComicsToUI();
+                loadCommentsFromServer();
+                return;
             }
 
-            let users = JSON.parse(localStorage.getItem('users'));
+            // 2. 一般使用者流程
+            let users = JSON.parse(localStorage.getItem('users')) || {};
 
-            // 檢查此信箱是否已經存在於硬碟資料庫中
             if (users[email]) {
-                // 如果存在，執行嚴格密碼比對 (防重複註冊)
                 if (users[email].password === password) {
-                    alert(`【帳號驗證通過】歡迎回來，${users[email].name}！系統已完成登入授權。`);
-                    executeLogin(users[email].name, email);
+                    alert(`【帳號驗證通過】歡迎回來，${users[email].name}！`);
+                    CURRENT_USER = { gm2_email: email, member_name: users[email].name, role: 'user' };
                 } else {
-                    alert('【拒絕存取】此信箱已被註冊，且您輸入的安全密碼錯誤！請重新輸入或使用其他帳號。');
+                    return alert('【拒絕存取】此信箱已被註冊，且安全密碼錯誤！');
                 }
             } else {
-                // 如果是新信箱，則進行全新的註冊
                 if (!name) {
-                    return alert('【新用戶註冊失敗】偵測到新信箱！註冊新帳號時，「真實姓名/暱稱」欄位為必填項。');
+                    return alert('【註冊失敗】新用戶註冊時，「真實姓名/暱稱」欄位為必填項。');
                 }
+                users[email] = { name: name, password: password, role: 'user' };
+                localStorage.setItem('users', JSON.stringify(users));
 
-                users[email] = { name: name, password: password };
-                localStorage.setItem('users', JSON.stringify(users)); // 永久寫入本地硬碟
-
-                alert('【註冊成功】新帳號與安全密碼已寫入用戶結構表！此信箱已被鎖定，無法被重複註冊。');
-                executeLogin(name, email);
+                alert('【註冊成功】新帳號與密碼已寫入用戶結構表！');
+                CURRENT_USER = { gm2_email: email, member_name: name, role: 'user' };
             }
-        }
 
-        function executeLogin(name, email) {
-            CURRENT_USER = { gm2_email: email, member_name: name };
             sessionStorage.setItem('current_user', JSON.stringify(CURRENT_USER));
-            document.getElementById('user-display').innerHTML = `<i class="fa-solid fa-circle-user text-success me-1"></i> ${name} 已驗證`;
+            applyUserRoleUI();
             loginModal.hide();
+            loadComicsToUI();
             loadCommentsFromServer();
         }
 
@@ -329,9 +403,7 @@
             window.location.reload();
         }
 
-        // ==========================================
-        //  功能四：讀取與儲存留言，並與前後台完美同步
-        // ==========================================
+        // 讀取與篩選留言 (R in CRUD)
         function loadCommentsFromServer() {
             const comments = JSON.parse(localStorage.getItem('comments')) || [];
             const currentContentId = document.getElementById('detail-title').getAttribute('data-content-id');
@@ -342,7 +414,6 @@
             commentBox.innerHTML = '';
             if (adminTable) adminTable.innerHTML = '';
 
-            // 前台：過濾出只屬於當前動漫作品的評論
             const filteredComments = comments.filter(c => String(c.content_id) === String(currentContentId));
 
             if (filteredComments.length === 0) {
@@ -360,7 +431,6 @@
                 });
             }
 
-            // 後台：無論是哪部動漫，管理者後台都會同步列出全系統的留言列表
             if (comments.length === 0) {
                 if (adminTable) adminTable.innerHTML = '<tr><td colspan="5" class="text-center text-muted">資料庫內無留言數據</td></tr>';
             } else {
@@ -374,13 +444,61 @@
                                 <td><small class="text-muted">${item.updated_at}</small></td>
                                 <td>
                                     <button class="btn btn-danger btn-sm" onclick="deleteCommentAction(${item.comment_id})">
-                                        <i class="fa-solid fa-trash-can me-1"></i>刪除
+                                        <i class="fa-solid fa-trash-can me-1"></i>刪除留言
                                     </button>
                                 </td>
                             </tr>`;
                     });
                 }
             }
+        }
+
+        // ==========================================
+        //  管理者後台功能：渲染全系統動漫表格與強刪
+        // ==========================================
+        function renderAdminComicTable() {
+            const adminComicTable = document.getElementById('admin-comic-table');
+            if (!adminComicTable) return;
+            
+            const comics = JSON.parse(localStorage.getItem('comics')) || [];
+            adminComicTable.innerHTML = '';
+
+            if (comics.length === 0) {
+                adminComicTable.innerHTML = '<tr><td colspan="5" class="text-center text-muted">全系統無作品資料</td></tr>';
+                return;
+            }
+
+            comics.forEach(item => {
+                const creatorShow = item.creator === 'system' ? '<span class="text-muted">核心系統內建</span>' : item.creator;
+                adminComicTable.innerHTML += `
+                    <tr>
+                        <td><strong>${item.id}</strong></td>
+                        <td><span class="fw-bold text-primary">${item.title}</span></td>
+                        <td><span class="badge bg-secondary">${item.source}</span></td>
+                        <td><small>${creatorShow}</small></td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" onclick="deleteComicFromAdmin(${item.id})">
+                                <i class="fa-solid fa-ban me-1"></i>強制下架
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        function deleteComicFromAdmin(comicId) {
+            if (!confirm('【最高權限提示】確認要以管理員身分對此作品執行全系統強制刪除（D in CRUD）嗎？這會連同刪除該作品的所有相關留言。')) return;
+
+            let comics = JSON.parse(localStorage.getItem('comics')) || [];
+            comics = comics.filter(c => c.id !== comicId);
+            localStorage.setItem('comics', JSON.stringify(comics));
+
+            let comments = JSON.parse(localStorage.getItem('comments')) || [];
+            comments = comments.filter(c => c.content_id !== comicId);
+            localStorage.setItem('comments', JSON.stringify(comments));
+
+            alert('【管理端後台成功】已強制將違規動漫專頁自系統底層資料結構全面實體刪除！');
+            loadComicsToUI();
+            loadCommentsFromServer();
         }
 
         // 發表評論 (C in CRUD)
@@ -409,23 +527,23 @@
             };
 
             comments.push(newComment);
-            localStorage.setItem('comments', JSON.stringify(comments)); // 永久同步存入硬碟
+            localStorage.setItem('comments', JSON.stringify(comments));
 
-            alert('【資料流成功】評論已成功寫入留言外鍵關聯表，並同步載入前後台系統！');
+            alert('【資料流成功】評論已成功發表！');
             document.getElementById('input-comment').value = '';
-            loadCommentsFromServer(); // 立即動態渲染，不需手動重整！
+            loadCommentsFromServer();
         }
 
         // 刪除評論 (D in CRUD)
         function deleteCommentAction(commentId) {
-            if (!confirm('確認要對 SQLite 本地模擬資料庫執行實體抹除動作（D in CRUD）嗎？')) return;
+            if (!confirm('確認要執行留言實體抹除動作嗎？')) return;
 
             let comments = JSON.parse(localStorage.getItem('comments')) || [];
             comments = comments.filter(item => item.comment_id !== commentId);
-            localStorage.setItem('comments', JSON.stringify(comments)); // 同步存入硬碟
+            localStorage.setItem('comments', JSON.stringify(comments));
 
-            alert('【後台審查成功】已將該違規評論自資料表中實體刪除！');
-            loadCommentsFromServer(); // 立即同步更新前後台排版
+            alert('【後台通知】該評論已自資料表中刪除！');
+            loadCommentsFromServer();
         }
     </script>
 </body>
