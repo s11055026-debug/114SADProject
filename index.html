@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>114系統分析與設計期末專案 - 臺灣動漫與媒體社群評論系統</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; min-height: 100vh; display: flex; flex-direction: column; }
+        .navbar-brand { font-weight: bold; letter-spacing: 1px; }
+        .hero-section { background: linear-gradient(135deg, #1f4068 0%, #162447 100%); color: white; padding: 50px 0; }
+        .comic-card img { height: 250px; object-fit: cover; }
+        .page { display: none; }
+        .page.active { display: block; }
+        footer { margin-top: auto; }
+        .card { border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="#" onclick="switchPage('home')"><i class="fa-solid fa-book-open text-warning me-2"></i>SAD 媒體評論系統</a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link active" id="nav-home" href="#" onclick="switchPage('home')">前台讀者首頁</a></li>
+                    <li class="nav-item"><a class="nav-link" id="nav-admin" href="#" onclick="switchPage('admin')">管理者後台</a></li>
+                </ul>
+                <span class="navbar-text text-white-50"><i class="fa-solid fa-circle-user me-1"></i> gm2 驗證帳號已登入</span>
+            </div>
+        </div>
+    </nav>
+
+    <div id="hero" class="hero-section text-center">
+        <div class="container">
+            <h1 class="display-5 fw-bold">114 系統分析與設計期末專案</h1>
+            <p class="lead">整合蓋亞讀樂、RT漫畫、臺灣漫畫基地與悠圖媒體之綜合評論管理系統</p>
+        </div>
+    </div>
+
+    <div class="container my-5">
+
+        <div id="home" class="page active">
+            <h3 class="mb-4 border-start border-primary border-4 ps-2">真實合作媒體與作品專區</h3>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card comic-card h-100">
+                        <img src="https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=500" class="card-img-top" alt="北城百畫帖">
+                        <div class="card-body">
+                            <span class="badge bg-primary mb-2">蓋亞讀樂網</span>
+                            <h5 class="card-title">《北城百畫帖》</h5>
+                            <p class="card-text text-muted small">臺灣漫畫家 AKRU 作品。以 1930 年代台北「百畫堂」珈琲館為舞台，融合歷史、奇幻與在地人文記憶的經典之作。</p>
+                            <button class="btn btn-outline-primary btn-sm w-100" onclick="viewComic('《北城百畫帖》（蓋亞出版）', 1)">查看社群評論</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card comic-card h-100">
+                        <img src="https://images.unsplash.com/photo-1608889174636-4d0f04c62f2a?w=500" class="card-img-top" alt="神之鄉">
+                        <div class="card-body">
+                            <span class="badge bg-success mb-2">臺灣漫畫基地推薦</span>
+                            <h5 class="card-title">《神之鄉》</h5>
+                            <p class="card-text text-muted small">臺灣漫畫家左萱作品。描繪大溪關聖帝君遶境文化，深刻描寫親情與土地連結，曾改編為同名台劇。</p>
+                            <button class="btn btn-outline-primary btn-sm w-100" onclick="viewComic('《神之鄉》（左萱作品）', 2)">查看社群評論</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card comic-card h-100">
+                        <img src="https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=500" class="card-img-top" alt="悠圖單車">
+                        <div class="card-body">
+                            <span class="badge bg-dark mb-2">悠圖單車生活媒體</span>
+                            <h5 class="card-title">YOATO 專欄討論</h5>
+                            <p class="card-text text-muted small">業界講座案例。垂直領域單車生活媒體之社群互動區，供讀者針對單車旅遊、裝備評測進行深度評論交流。</p>
+                            <button class="btn btn-outline-primary btn-sm w-100" onclick="viewComic('悠圖單車生活媒體評測專欄', 3)">查看讀者討論</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="comic-detail" class="page">
+            <button class="btn btn-secondary btn-sm mb-4" onclick="switchPage('home')"><i class="fa-solid fa-arrow-left me-1"></i> 返回首頁</button>
+            <div class="card p-4 mb-4 bg-white">
+                <h2 id="detail-title" class="fw-bold text-dark">作品/專欄名稱</h2>
+                <p class="text-muted" id="detail-source">真實業界資料來源整合</p>
+                <hr>
+                <h5>系統需求實作說明</h5>
+                <p class="text-muted small">本區實作需求書第6項：提供 gm2 驗證會員進行「新增、修改、刪除個人留言」之介面與流程。</p>
+            </div>
+
+            <div class="card p-4">
+                <h4 class="mb-3"><i class="fa-regular fa-comments me-2 text-primary"></i>讀者深度評論</h4>
+                <div id="comment-box" class="mb-4">
+                    <div class="p-3 bg-light rounded mb-2 border-start border-primary border-3">
+                        <div class="d-flex justify-content-between">
+                            <strong>王組員 (m114xxxx@gm2.edu.tw)</strong>
+                            <small class="text-muted">2026-05-27</small>
+                        </div>
+                        <p class="mb-0 mt-2">漫畫精準還原了台灣歷史場景，文史考證非常用心，值得大力推廣！</p>
+                    </div>
+                </div>
+
+                <h5 class="mt-4">發表評論 (需 gm2 帳號驗證)</h5>
+                <div class="mb-3">
+                    <textarea id="input-comment" class="form-control" rows="3" placeholder="請輸入對該作品或專欄的系統分析/內容評論..."></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="submitComment()"><i class="fa-solid fa-paper-plane me-1"></i> 送出評論資料流</button>
+            </div>
+        </div>
+
+        <div id="admin" class="page">
+            <h3 class="mb-4 text-danger fw-bold border-start border-danger border-4 ps-2">系統管理後台 (後台數據與實作)</h3>
+            
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="p-3 bg-white rounded shadow-sm d-flex align-items-center">
+                        <div class="p-3 bg-primary-subtle text-primary rounded me-3"><i class="fa-solid fa-users fa-2x"></i></div>
+                        <div><p class="mb-0 text-muted">gm2 註冊會員總數</p><h3 class="mb-0 fw-bold">14 組共 42 人</h3></div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-3 bg-white rounded shadow-sm d-flex align-items-center">
+                        <div class="p-3 bg-success-subtle text-success rounded me-3"><i class="fa-solid fa-database fa-2x"></i></div>
+                        <div><p class="mb-0 text-muted">資料庫連線狀態 (PostgreSQL)</p><h3 class="mb-0 fw-bold text-success">正常 (已符合3NF)</h3></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-4">
+                <h5 class="card-title text-dark fw-bold mb-3"><i class="fa-solid fa-list-check me-2"></i>後台留言審查與回饋管理機制</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr><th>學號/帳號</th><th>所屬平台/作品</th><th>評論內容流 (Data Flow)</th><th>操作時間</th><th>審查動作 (CRUD)</th></tr>
+                        </thead>
+                        <tbody id="admin-comment-table">
+                            <tr id="row-init">
+                                <td>王組員</td>
+                                <td>《北城百畫帖》（蓋亞出版）</td>
+                                <td>漫畫精準還原了台灣歷史場景，文史考證非常用心...</td>
+                                <td>2026-05-27</td>
+                                <td>
+                                    <button class="btn btn-success btn-sm me-1" onclick="alert('已發送官方回饋通知至 gm2 信箱')">回饋</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteCommentRow('row-init')">刪除</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer class="bg-dark text-white-50 text-center py-3">
+        <div class="container">
+            <small>114 系統分析與設計 期末分組專案 示範系統 </small>
+        </div>
+    </footer>
+
+    <script>
+    // 後台 API 的基礎網址
+    const API_BASE = 'http://localhost:3000/api';
+    
+    // 模擬目前登入的組員資料（符合規格書要求的 gm2 帳號規範）
+    const CURRENT_USER = {
+        student_id: 'M11403001', // 測試用學號，Demo 時可自由更改
+        gm2_email: 'sam24@gm2.edu.tw',
+        member_name: '報告組員'
+    };
+
+    // 網頁載入完成後，自動執行初始化
+    document.addEventListener('DOMContentLoaded', () => {
+        loadCommentsFromServer();
+    });
+
+    // 切換前台首頁與管理者後台頁面
+    function switchPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        document.getElementById('hero').style.display = (pageId === 'home') ? 'block' : 'none';
+        
+        // 如果切換到後台，重新向伺服器抓取最新數據
+        if (pageId === 'admin') {
+            loadCommentsFromServer();
+        }
+    }
+
+    // 點擊作品字樣，進入評論詳細頁面
+    function viewComic(title, contentId) {
+        document.getElementById('detail-title').innerText = title;
+        document.getElementById('detail-title').setAttribute('data-content-id', contentId);
+        document.getElementById('detail-source').innerText = "資料來源調用自 3NF 資料庫，編號：" + contentId;
+        switchPage('comic-detail');
+    }
+
+    // ==========================================
+    //  核心串接一：向後台撈取所有真實留言 (R in CRUD)
+    // ==========================================
+    function loadCommentsFromServer() {
+        fetch(`${API_BASE}/comments`)
+            .then(res => res.json())
+            .then(data => {
+                const commentBox = document.getElementById('comment-box');
+                const adminTable = document.getElementById('admin-comment-table');
+                
+                // 清空舊的畫面數據
+                commentBox.innerHTML = '';
+                if (adminTable) adminTable.innerHTML = '';
+
+                if (data.length === 0) {
+                    commentBox.innerHTML = '<p class="text-muted text-center py-3">目前暫無評論，歡迎測試發表！</p>';
+                    if (adminTable) adminTable.innerHTML = '<tr><td colspan="5" class="text-center text-muted">資料庫內無留言數據</td></tr>';
+                    return;
+                }
+
+                // 依序渲染每筆資料
+                data.forEach(item => {
+                    // 1. 渲染前台讀者評論區
+                    commentBox.innerHTML += `
+                        <div class="p-3 bg-light rounded mb-2 border-start border-primary border-3">
+                            <div class="d-flex justify-content-between">
+                                <strong>${item.member_name} (${item.updated_at})</strong>
+                                <span class="badge bg-secondary">${item.platform_name}</span>
+                            </div>
+                            <p class="mb-0 mt-2"><strong>[${item.title}]</strong> ${item.comment_text}</p>
+                        </div>`;
+
+                    // 2. 渲染管理者後台審查表格
+                    if (adminTable) {
+                        adminTable.innerHTML += `
+                            <tr id="row-${item.comment_id}">
+                                <td>${item.member_name}</td>
+                                <td>${item.title}</td>
+                                <td>${item.comment_text}</td>
+                                <td>${item.updated_at}</td>
+                                <td>
+                                    <button class="btn btn-success btn-sm me-1" onclick="alert('已發送官方回饋通知！')">回饋</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteCommentFromServer(${item.comment_id})">刪除</button>
+                                </td>
+                            </tr>`;
+                    }
+                });
+            })
+            .catch(err => console.error("無法從後台撈取留言:", err));
+    }
+
+    // ==========================================
+    //  核心串接二：發送新留言到後台資料庫 (C in CRUD)
+    // ==========================================
+    function submitComment() {
+        const content = document.getElementById('input-comment').value.trim();
+        if (!content) return alert('請輸入評論內容！');
+
+        const contentId = document.getElementById('detail-title').getAttribute('data-content-id');
+
+        // 先把當前使用者註冊/更新進後台，確保外鍵不會失效
+        fetch(`${API_BASE}/users`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(CURRENT_USER)
+        })
+        .then(() => {
+            // 真正發送留言流
+            return fetch(`${API_BASE}/comments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    student_id: CURRENT_USER.student_id,
+                    content_id: parseInt(contentId),
+                    comment_text: content
+                })
+            });
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert('【前台通知】' + data.message);
+            document.getElementById('input-comment').value = '';
+            switchPage('home'); // 發表成功後返回首頁
+            loadCommentsFromServer(); // 刷新同步
+        })
+        .catch(err => alert('資料流傳輸失敗，請確認伺服器 node server.js 是否開啟。'));
+    }
+
+    // ==========================================
+    //  核心串接三：從後台刪除違規留言 (D in CRUD)
+    // ==========================================
+    function deleteCommentFromServer(commentId) {
+        if (!confirm('確認要執行後台資料抹除動作（D in CRUD）嗎？')) return;
+
+        fetch(`${API_BASE}/admin/comments/${commentId}`, {
+            method: 'DELETE'
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert('【後台審查機制】' + data.message);
+            loadCommentsFromServer(); // 重新整理表格
+        })
+        .catch(err => console.error("刪除失敗:", err));
+    }
+</script>
+</body>
+</html>
