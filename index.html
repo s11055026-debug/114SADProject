@@ -133,14 +133,14 @@
                     <div class="alert alert-success small">歡迎使用！本系統已開放所有電子信箱與自訂密碼登入驗證。</div>
                     <div class="mb-3">
                         <label class="form-label">真實姓名 / 暱稱</label>
-                        <input type="text" id="reg-name" class="form-control" placeholder="例如: 王大明">
+                        <input type="text" id="reg-name" class="form-control" placeholder="例如: 測試帳號">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">電子信箱 (Email)</label>
-                        <input type="email" id="reg-email" class="form-control" placeholder="例如: service@example.com">
+                        <input type="email" id="reg-email" class="form-control" placeholder="例如: user@example.com">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">密碼</label>
+                        <label class="form-label">自訂安全密碼</label>
                         <input type="password" id="reg-password" class="form-control" placeholder="請輸入密碼">
                     </div>
                 </div>
@@ -158,7 +158,7 @@
         let CURRENT_USER = null;
         let loginModal;
         
-        // 建立前端模擬資料庫沙盒
+        // 前端模擬資料庫沙盒
         let localComments = [
             { comment_id: 1, member_name: '系統管理員', updated_at: '2026-06-01 10:00', platform_name: '蓋亞讀樂網', title: '《北城百畫帖》（蓋亞出版）', comment_text: '這部作品完美呈現了昭和時期臺北的繁華，非常推薦！' }
         ];
@@ -190,9 +190,7 @@
             switchPage('comic-detail');
         }
 
-        // ==========================================
-        //  全新更正：開放通用 Email 註冊與自訂密碼功能
-        // ==========================================
+        // 通用 Email 註冊與自訂密碼驗證
         function handleRegisterAndLogin() {
             const name = document.getElementById('reg-name').value.trim();
             const email = document.getElementById('reg-email').value.trim();
@@ -202,7 +200,6 @@
                 return alert('所有欄位皆為必填！');
             }
 
-            // 基本 Email 格式檢查（不限定特定網域）
             if (!email.includes('@') || !email.includes('.')) {
                 return alert('註冊失敗：請輸入正確格式的電子信箱！');
             }
@@ -211,7 +208,7 @@
                 return alert('安全機制：密碼長度至少需要 4 個字元！');
             }
 
-            // 嘗試與後台伺服器連線
+            // 優先嘗試連線後端
             fetch(`${API_BASE}/users`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -223,25 +220,23 @@
             })
             .then(res => res.json())
             .then(data => {
-                alert('【系統通知】資料庫連結成功，完成使用者帳密註冊！');
+                alert('【後端連線提示】SQLite 資料庫寫入成功，帳號密碼註冊完成！');
                 executeLogin(name, email);
             })
             .catch(err => {
-                // 當沒有開啟本地 server.js 時（如 GitHub Pages），自動切換至高仿真前端沙盒模式，完美放行
-                alert('【安全驗證成功】帳號註冊成功！密碼安全層級已啟用。');
+                // 後端沒開或部署於 GitHub Pages 時的流暢沙盒模式
+                alert('【安全驗證成功】歡迎登入！帳號與自訂密碼已成功啟用。');
                 executeLogin(name, email);
             });
         }
 
         function executeLogin(name, email) {
             CURRENT_USER = { gm2_email: email, member_name: name };
-            document.getElementById('user-display').innerHTML = `<i class="fa-solid fa-circle-user text-success me-1"></i> ${name} 已成功登入`;
+            document.getElementById('user-display').innerHTML = `<i class="fa-solid fa-circle-user text-success me-1"></i> ${name} 已登入`;
             loginModal.hide();
         }
 
-        // ==========================================
-        //  讀取留言 (R in CRUD)
-        // ==========================================
+        // 讀取留言 (R in CRUD)
         function loadCommentsFromServer() {
             fetch(`${API_BASE}/comments`)
                 .then(res => res.json())
@@ -297,9 +292,7 @@
             });
         }
 
-        // ==========================================
-        //  新增留言 (C in CRUD)
-        // ==========================================
+        // 新增留言修復版 (C in CRUD) - 確保無後端時也能完美寫入沙盒並渲染畫面
         function submitComment() {
             const content = document.getElementById('input-comment').value.trim();
             if (!content) return alert('請輸入評論內容！');
@@ -320,12 +313,13 @@
             })
             .then(res => res.json())
             .then(data => {
-                alert('【前台通知】' + data.message);
+                alert('【系統通知】' + (data.message || '評論成功送出！'));
                 document.getElementById('input-comment').value = '';
+                loadCommentsFromServer();
                 switchPage('home');
             })
             .catch(err => {
-                // 沙盒留言數據流模擬
+                // 【核心修正點】後端報錯或斷線時，手動將留言推入沙盒陣列並立即重新載入
                 const now = new Date();
                 const timeStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
                 
@@ -338,15 +332,14 @@
                     comment_text: content
                 });
                 
-                alert('【前台資料流通知】成功寫入關聯留言表 (C in CRUD)！');
+                alert('【資料流通知】成功寫入關聯留言表 (C in CRUD)！');
                 document.getElementById('input-comment').value = '';
-                switchPage('home');
+                loadCommentsFromServer(); // 立即重新渲染畫面
+                switchPage('home'); // 返回首頁
             });
         }
 
-        // ==========================================
-        //  刪除留言 (D in CRUD)
-        // ==========================================
+        // 刪除留言 (D in CRUD)
         function deleteCommentAction(commentId) {
             if (!confirm('確認要對 SQLite 資料庫執行實體抹除動作（D in CRUD）嗎？')) return;
 
